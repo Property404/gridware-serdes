@@ -1,0 +1,21 @@
+*
+
+# Submodules
+!nanopd
+
+# Build files
+!Makefile
+!*.proto
+
+# Source files
+!*.cpp
+!*.h
+
+# Git stuff
+!.gitignore
+!.gitmodules
+!.gitattributes
+
+# Ignore ephemerals
+*.pb.h
+*.pb.c
