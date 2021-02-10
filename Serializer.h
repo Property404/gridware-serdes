@@ -17,7 +17,7 @@ constexpr size_t _serializer_sizeOfType()
 		std::is_same<T, gridware_FirmwareImagePage>::value?
 			2060:
 		// Throw compiler error if type unknown
-		-1;
+		-1;//reinterpret_cast<T>(-1);
 }
 
 
@@ -27,14 +27,14 @@ constexpr size_t _serializer_sizeOfType()
 template<class T>
 class SerializerBuffer
 {
-	// Actual data
-	uint8_t data[_serializer_sizeOfType<T>()];
-
 	// Fixed size of our data
-	static constexpr size_t data_size = _serializer_sizeOfType<T>();
+	static constexpr size_t data_size = _serializer_sizeOfType<typename std::remove_const<T>::type>();
+
+	// Actual data
+	uint8_t data[data_size];
 
 	// This is filled in by the encoder function
-	size_t message_length;
+	size_t message_length = 0;
 
 	// Get specific PB fields object associated with type
 	// Used for calling the pb_encode() and pb_decode() functions
@@ -43,16 +43,19 @@ class SerializerBuffer
 	static constexpr decltype(gridware_DeviceResponse_fields) fieldsOfType()
 	{
 		return
-			std::is_same<T, gridware_DeviceResponse>::value?
+			std::is_same<typename std::remove_const<T>::type, gridware_DeviceResponse>::value?
 				gridware_DeviceResponse_fields:
-			std::is_same<T, gridware_FirmwareImagePage>::value?
+			std::is_same<typename std::remove_const<T>::type, gridware_FirmwareImagePage>::value?
 				gridware_FirmwareImagePage_fields:
 			nullptr;
 	}
 public:
 
 	SerializerBuffer(){};
-	SerializerBuffer(const T& msg){serialize(msg);};
+	SerializerBuffer(const T& msg){
+		static_assert(fieldsOfType() != nullptr);
+		serialize(msg);
+	};
 
 	// Serialize a message into the buffer
 	int serialize(const T& message)
@@ -65,7 +68,10 @@ public:
 		message_length = stream.bytes_written;
 
 		if(!status)
+		{
+			message_length = 0;
 			return -1;
+		}
 		return 0;
 	}
 
@@ -92,10 +98,22 @@ public:
 		return data;
 	}
 
+	// Return full buffer size
+	size_t getDataSize() const
+	{
+		return data_size;
+	}
+
+	// Return length of message - only makes sense if already serialized
 	size_t getLength() const
 	{
 		return message_length;
 	}
+	void setLength(size_t s)
+	{
+		message_length = s;
+	}
 };
+
 
 #endif
