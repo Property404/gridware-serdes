@@ -40,15 +40,10 @@ static void receiveFirmwareImage(const Socket& connection)
 
 	if(!obj.last)
 		receiveFirmwareImage(connection);
-	else
-		std::cout<<"Client: Last!"<<std::endl;
 }
 void launchClient(int port)
 {
 	Socket socket;
 	socket.connect("localhost", port);
 	receiveFirmwareImage(socket);
-
-	std::cout<<"Client: hanging up"<<std::endl;
-	sleep(1);
 }

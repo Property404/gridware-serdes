@@ -28,7 +28,6 @@ class Socket{
 	// Just wrappers around send(), recv(), etc
 	void send(const uint8_t* buffer, size_t size) const;
 	size_t receive(uint8_t* buffer, size_t buffer_size) const;
-	// This throws a PeerDisconnect exception if peer disconnects
 	void listen(int backlog = Socket::DEFAULT_BACKLOG) const;
 	// accept() might store address info, so it's left not const
 	int accept();
@@ -53,13 +52,6 @@ class Socket{
 
 	// Moving is fine, however
 	Socket(Socket&&);
-
-	// To let the caller know peer has shutdown
-	class PeerDisconnect : std::runtime_error
-	{
-		public:
-			PeerDisconnect(const std::string& message): runtime_error(message){}
-	};
 
 	~Socket();
 };

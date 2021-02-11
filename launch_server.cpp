@@ -49,7 +49,7 @@ static void sendFile(const Socket& connection, const std::string& filename)
 			obj.crc.size = 2;
 
 			const SerializerBuffer<decltype(obj)> buffer(obj);
-			std::cout<<"Server: Sending firmware image page"<<std::endl;
+			std::cout<<"Server: Sending "<<local_page_size<<" bytes of firmware image"<<std::endl;
 			connection.send(buffer.getData(), buffer.getLength());
 		}
 
