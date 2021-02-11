@@ -2,6 +2,7 @@
 
 # Submodules
 !nanopd
+!libcrc
 
 # Build files
 !Makefile

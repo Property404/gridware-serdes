@@ -2,6 +2,7 @@
 #include "Server.h"
 #include "Socket.h"
 #include "Serializer.h"
+#include "checksum.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -30,12 +31,10 @@ static void sendFile(const Socket& connection, const std::string& filename)
 		{
 			const auto local_page_size = std::min(max_page_size, bytes_left);
 			bytes_left-=local_page_size;
-			std::cout<<"Bytes_left: "<<bytes_left<<std::endl;
 
 			gridware_FirmwareImagePage obj = gridware_FirmwareImagePage_init_zero;
 
-			obj.last = (bytes_left <= max_page_size);
-			std::cout<<"LAST!"<<std::endl;
+			obj.last = (bytes_left <= 0);
 
 			obj.page.size = local_page_size;
 			for(unsigned i=0;i<local_page_size;i++)
@@ -43,14 +42,14 @@ static void sendFile(const Socket& connection, const std::string& filename)
 				obj.page.bytes[i] = contents[offset+i];
 			}
 			offset+=local_page_size;
-			// TODO: CRC
-			//
-			obj.crc.bytes[0]=0xCA;
-			obj.crc.bytes[1]=0xFE;
+
+			const uint16_t checksum = crc_16(obj.page.bytes, obj.page.size);
+			obj.crc.bytes[0]=checksum&0xFF;
+			obj.crc.bytes[1]=(checksum>>8)&0xFF;
 			obj.crc.size = 2;
 
 			const SerializerBuffer<decltype(obj)> buffer(obj);
-			std::cout<<"Sending firmware image page"<<std::endl;
+			std::cout<<"Server: Sending firmware image page"<<std::endl;
 			connection.send(buffer.getData(), buffer.getLength());
 		}
 
@@ -65,9 +64,9 @@ static void sendFile(const Socket& connection, const std::string& filename)
 				throw std::runtime_error("Could not deserialize DeviceResponse");
 
 			if(obj.verified)
-				std::cout<<"Device response A-OK"<<std::endl;
+				std::cout<<"Server: Device response A-OK"<<std::endl;
 			else
-				std::cerr<<"Device response not OK"<<std::endl;
+				std::cerr<<"Server: Device response not OK"<<std::endl;
 		}
 	}
 }

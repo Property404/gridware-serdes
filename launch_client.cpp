@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include "checksum.h"
+#include <unistd.h>
 
 static void receiveFirmwareImage(const Socket& connection)
 {
@@ -21,24 +23,32 @@ static void receiveFirmwareImage(const Socket& connection)
 	}
 
 	// Check if CRC is OK
-	std::cerr<<"CRC: "<<static_cast<int>(obj.crc.bytes[0])<<std::endl;
+	const uint16_t checksum = crc_16(obj.page.bytes, obj.page.size);
+	const bool valid = (checksum == ((obj.crc.bytes[1]<<8) | obj.crc.bytes[0]));
+	if(valid)
+		std::cout<<"Client: Checksum OK!"<<std::endl;
+	else
+		std::cout<<"Client: Checksum verification failed";
+
 	// Send verify
 	{
-		std::cerr<<"Adjust this response code"<<std::endl;
 		gridware_DeviceResponse response = gridware_DeviceResponse_init_zero;
-		response.verified = true;
-		std::cout<<"Freakin'"<<std::endl;
+		response.verified = valid;
 		const SerializerBuffer<decltype(response)> buffer(response);
-		std::cout<<"Sendin'"<<std::endl;
 		connection.send(buffer.getData(), buffer.getLength());
 	}
 
 	if(!obj.last)
 		receiveFirmwareImage(connection);
+	else
+		std::cout<<"Client: Last!"<<std::endl;
 }
 void launchClient(int port)
 {
 	Socket socket;
 	socket.connect("localhost", port);
 	receiveFirmwareImage(socket);
+
+	std::cout<<"Client: hanging up"<<std::endl;
+	sleep(1);
 }
