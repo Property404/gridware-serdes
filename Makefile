@@ -16,7 +16,7 @@ SIM_OBJECTS = $(COMMON_OBJECTS) network_simulate.o launch_server.o\
 all: proto sim
 
 # Simulator executable
-sim: $(SIM_OBJECTS)
+sim: binary $(SIM_OBJECTS)
 	$(CXX) $(CXXFLAGS) $(SIM_OBJECTS) -o sim -lpthread
 
 # Compile protobuf file
@@ -29,7 +29,12 @@ test: proto $(UNIT_TEST_OBJECTS)
 	$(CXX) $(CXXFLAGS) $(UNIT_TEST_OBJECTS) -o test -lpthread
 	./test
 
+# Make the test binary
+binary:
+	dd if=/dev/urandom of=binary count=15
+
 clean:
 	rm -f $(UNIT_TEST_OBJECTS)
 	rm -f *.pb.c *.pb.h *.o
 	rm -f test
+	rm -f binary
